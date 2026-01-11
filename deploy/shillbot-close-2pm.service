@@ -1,0 +1,12 @@
+[Unit]
+Description=Shooter ShillBot Window Close (2:00 PM CT)
+After=network.target
+
+[Service]
+Type=oneshot
+User=%i
+WorkingDirectory=/home/%i/shillbot
+EnvironmentFile=-/home/%i/shillbot/.env
+ExecStart=/home/%i/shillbot/.venv/bin/python -m shillbot close-once
+StandardOutput=journal
+StandardError=journal

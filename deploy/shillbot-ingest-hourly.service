@@ -1,0 +1,12 @@
+[Unit]
+Description=Shooter ShillBot Hourly Registration Ingest
+After=network.target
+
+[Service]
+Type=oneshot
+User=%i
+WorkingDirectory=/home/%i/shillbot
+EnvironmentFile=-/home/%i/shillbot/.env
+ExecStart=/home/%i/shillbot/.venv/bin/python -m shillbot ingest-registrations
+StandardOutput=journal
+StandardError=journal

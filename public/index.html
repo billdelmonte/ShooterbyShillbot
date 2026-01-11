@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Shooter ShillBot – Latest</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 24px; }
+      .box { padding: 16px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 16px; }
+      table { border-collapse: collapse; width: 100%; }
+      th, td { border-bottom: 1px solid #eee; padding: 8px; text-align: left; }
+      th { background: #f7f7f7; }
+      .muted { color: #666; }
+      code { background: #f3f3f3; padding: 2px 6px; border-radius: 6px; }
+    </style>
+  </head>
+  <body>
+    <h1>Shooter ShillBot – Latest Close</h1>
+    <div id="meta" class="box">Loading...</div>
+
+    <div class="box">
+      <h2>Winners</h2>
+      <table id="winners">
+        <thead>
+          <tr><th>Rank</th><th>Handle</th><th>Score</th><th>Tweet</th><th>Wallet</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="box">
+      <h2>Payouts</h2>
+      <table id="payouts">
+        <thead>
+          <tr><th>Wallet</th><th>SOL</th><th>Status</th><th>Signature</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <p class="muted">If <code>dry_run=true</code>, no SOL was actually sent.</p>
+    </div>
+
+    <div class="box">
+      <h2>Notes</h2>
+      <ul id="notes"></ul>
+    </div>
+
+    <script>
+      async function main() {
+        const res = await fetch("latest.json?cachebust=" + Date.now());
+        if (!res.ok) {
+          document.getElementById("meta").textContent = "No latest.json yet. Run: shillbot close-once";
+          return;
+        }
+        const data = await res.json();
+        document.getElementById("meta").innerHTML =
+          `<b>Window:</b> ${data.window_id}<br/>
+           <b>Generated:</b> ${data.generated_at_utc}<br/>
+           <b>Fees In:</b> ${data.fees_in_sol} SOL`;
+
+        const wbody = document.querySelector("#winners tbody");
+        wbody.innerHTML = "";
+        for (const w of data.winners || []) {
+          const tr = document.createElement("tr");
+          const tweetUrl = `https://x.com/i/web/status/${w.tweet_id}`;
+          tr.innerHTML = `<td>${w.rank}</td><td>@${w.handle}</td><td>${w.score.toFixed(4)}</td>
+                          <td><a href="${tweetUrl}" target="_blank">${w.tweet_id}</a></td>
+                          <td>${w.wallet}</td>`;
+          wbody.appendChild(tr);
+        }
+
+        const pbody = document.querySelector("#payouts tbody");
+        pbody.innerHTML = "";
+        for (const p of data.payouts || []) {
+          const sol = (p.lamports / 1e9).toFixed(6);
+          const sig = p.signature ? p.signature : "";
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td>${p.wallet}</td><td>${sol}</td><td>${p.status}</td><td>${sig}</td>`;
+          pbody.appendChild(tr);
+        }
+
+        const notes = document.getElementById("notes");
+        notes.innerHTML = "";
+        for (const n of data.notes || []) {
+          const li = document.createElement("li");
+          li.textContent = n;
+          notes.appendChild(li);
+        }
+      }
+      main();
+    </script>
+  </body>
+</html>

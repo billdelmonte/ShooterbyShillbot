@@ -1,0 +1,12 @@
+[Unit]
+Description=Shooter ShillBot Window Close Timer (11:00 PM CT)
+Requires=shillbot-close-11pm.service
+
+[Timer]
+OnCalendar=*-*-* 23:00:00
+Timezone=America/Chicago
+RandomizedDelaySec=60
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

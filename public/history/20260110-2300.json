@@ -1,0 +1,36 @@
+{
+  "current_treasury_balance_lamports": 4998995000,
+  "current_treasury_balance_sol": 4.998995,
+  "end_balance_lamports": 4998995000,
+  "end_balance_sol": 4.998995,
+  "fees_in_lamports": 0,
+  "fees_in_sol": 0.0,
+  "generated_at_utc": "2026-01-11T05:38:05.090957+00:00",
+  "lifetime_total_fees_lamports": 1500000000,
+  "lifetime_total_fees_sol": 1.5,
+  "notes": [
+    "start_balance_sol=4.998995 (from window record)",
+    "end_balance_sol=4.998995 (snapshot at window close)",
+    "After rate limiting: 1 tweets",
+    "v0_note: fees_in computed from Solana balance snapshots.",
+    "payout_mode=REAL",
+    "window_local=2026-01-10T14:00:00-06:00..2026-01-10T23:00:00-06:00",
+    "pot_lamports=0",
+    "top_n=20"
+  ],
+  "payouts": [],
+  "start_balance_lamports": 4998995000,
+  "start_balance_sol": 4.998995,
+  "window_delta_lamports": 0,
+  "window_delta_sol": 0.0,
+  "window_id": "20260110-2300",
+  "winners": [
+    {
+      "handle": "william_test",
+      "rank": 1,
+      "score": 3.143515309210374,
+      "tweet_id": "tweet_001",
+      "wallet": "C4RmBaZJdXBJZsGxnRsjSrpfxAt6hz9BiBEVYpeMcCnD"
+    }
+  ]
+}

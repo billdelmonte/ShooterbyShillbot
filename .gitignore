@@ -1,0 +1,15 @@
+# Secrets
+.env
+keys/
+
+# Python junk
+__pycache__/
+*.pyc
+.venv/
+
+# Local DB
+shillbot.sqlite3
+
+# OS junk
+.DS_Store
+Thumbs.db

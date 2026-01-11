@@ -1,0 +1,11 @@
+[Unit]
+Description=Shooter ShillBot Hourly Registration Ingest Timer
+Requires=shillbot-ingest-hourly.service
+
+[Timer]
+OnCalendar=hourly
+RandomizedDelaySec=300
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

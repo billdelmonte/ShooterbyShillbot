@@ -1,0 +1,30 @@
+{
+  "fees_in_lamports": 1500000000,
+  "fees_in_sol": 1.5,
+  "generated_at_utc": "2026-01-10T08:14:34.792182+00:00",
+  "notes": [
+    "mock_fees_sol=1.500000",
+    "v0_note: ingest is no-op; payouts are DRY_RUN; fees_in is 0 unless mocked or Solana wiring is added.",
+    "window_local=2026-01-09T14:00:00-06:00..2026-01-09T23:00:00-06:00",
+    "pot_lamports=1125000000",
+    "top_n=20"
+  ],
+  "payouts": [
+    {
+      "lamports": 562500000,
+      "signature": null,
+      "status": "DRY_RUN",
+      "wallet": "C4RmBaZJdXBJZsGxnRsjSrpfxAt6hz9BiBEVYpeMcCnD"
+    }
+  ],
+  "window_id": "20260109-2300",
+  "winners": [
+    {
+      "handle": "william_test",
+      "rank": 1,
+      "score": 3.143515309210374,
+      "tweet_id": "tweet_001",
+      "wallet": "C4RmBaZJdXBJZsGxnRsjSrpfxAt6hz9BiBEVYpeMcCnD"
+    }
+  ]
+}

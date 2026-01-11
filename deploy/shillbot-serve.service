@@ -1,0 +1,17 @@
+[Unit]
+Description=Shooter ShillBot Web Server
+After=network.target
+
+[Service]
+Type=simple
+User=%i
+WorkingDirectory=/home/%i/shillbot
+EnvironmentFile=-/home/%i/shillbot/.env
+ExecStart=/home/%i/shillbot/.venv/bin/python -m shillbot serve
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target
