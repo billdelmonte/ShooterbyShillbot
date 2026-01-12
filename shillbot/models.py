@@ -17,6 +17,9 @@ class Tweet:
     view_count: int
     has_media: bool
     media_type: str
+    is_retweet: bool = False
+    is_quote: bool = False
+    has_original_text: bool = False
 
 
 @dataclass(frozen=True)

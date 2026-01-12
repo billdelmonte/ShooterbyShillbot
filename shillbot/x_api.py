@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import time
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
@@ -65,7 +66,7 @@ class XAPIClient:
         params: Dict[str, Any] = {
             "query": query,
             "max_results": min(max_results, 100),  # API max is 100
-            "tweet.fields": "id,text,created_at,author_id,public_metrics,attachments",
+            "tweet.fields": "id,text,created_at,author_id,public_metrics,attachments,referenced_tweets",
             "user.fields": "id,username,name",
             "expansions": "author_id",
         }
@@ -138,6 +139,31 @@ class XAPIClient:
             text = raw_tweet.get("text", "")
             created_at = raw_tweet.get("created_at", "")
 
+            # Detect if tweet is a retweet or quote
+            referenced = raw_tweet.get("referenced_tweets", [])
+            is_retweet = any(ref.get("type") == "retweeted" for ref in referenced)
+            is_quote = any(ref.get("type") == "quoted" for ref in referenced)
+            
+            # Heuristic: Check if retweet has added original text
+            # Pure retweets typically start with "RT @user:" or just have minimal text
+            has_original_text = False
+            if is_retweet:
+                # Check if text has substantial content beyond "RT @user:"
+                text_lower = text.lower().strip()
+                # Remove common RT patterns
+                rt_patterns = [
+                    r"^rt\s+@\w+:\s*",
+                    r"^rt\s+@\w+\s+",
+                ]
+                cleaned_text = text_lower
+                for pattern in rt_patterns:
+                    cleaned_text = re.sub(pattern, "", cleaned_text, flags=re.IGNORECASE)
+                # If substantial text remains after removing RT pattern, has original thoughts
+                has_original_text = len(cleaned_text.strip()) > 20
+            elif is_quote:
+                # Quote tweets always have original text
+                has_original_text = True
+
             # Extract engagement metrics
             metrics = raw_tweet.get("public_metrics", {})
             like_count = int(metrics.get("like_count", 0))
@@ -145,13 +171,18 @@ class XAPIClient:
             reply_count = int(metrics.get("reply_count", 0))
             quote_count = int(metrics.get("quote_count", 0))
             # View/impression count not available in public_metrics for free tier
-            view_count = int(metrics.get("impression_count", 0))
+            # Try non_public_metrics if available, otherwise default to 0
+            non_public_metrics = raw_tweet.get("non_public_metrics", {})
+            view_count = int(non_public_metrics.get("impression_count", 0))
+            if view_count == 0:
+                view_count = int(metrics.get("impression_count", 0))
 
             # Check for media
             attachments = raw_tweet.get("attachments", {})
             media_keys = attachments.get("media_keys", [])
             has_media = len(media_keys) > 0
-            media_type = "image"  # Default, could be enhanced with media lookup
+            # Default media type (could be enhanced with media lookup via includes.media)
+            media_type = "" if not has_media else "image"
 
             return {
                 "tweet_id": tweet_id,
@@ -164,7 +195,10 @@ class XAPIClient:
                 "reply_count": reply_count,
                 "view_count": view_count,
                 "has_media": has_media,
-                "media_type": media_type if has_media else "",
+                "media_type": media_type,
+                "is_retweet": is_retweet,
+                "is_quote": is_quote,
+                "has_original_text": has_original_text,
             }
         except (KeyError, ValueError, TypeError):
             return None

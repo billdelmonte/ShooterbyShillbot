@@ -74,16 +74,56 @@ class XIngestor:
             print(f"WARNING: Failed to scrape registrations: {e}")
             return []
 
+    def _is_shill_tweet(self, parsed: dict) -> bool:
+        """
+        Filter tweets in Python to check if they match shill criteria.
+        Case-insensitive substring matching.
+        
+        Matches if ANY of:
+        - Contains $SHOOTER, $SHILLBOT, or $SHILL (case-insensitive)
+        - Contains token mint address (substring)
+        - Mentions @shootercoinsol or @shillbot
+        - Is a retweet (detected in parsed tweet data)
+        """
+        if not parsed:
+            return False
+        
+        text_lower = parsed.get("text", "").lower()
+        handle_lower = parsed.get("handle", "").lower()
+        
+        # Check cashtags
+        cashtags = ["$shooter", "$shillbot", "$shill"]
+        for cashtag in cashtags:
+            if cashtag in text_lower:
+                return True
+        
+        # Check token mint address (substring match)
+        if self.token_mint and self.token_mint.lower() in text_lower:
+            return True
+        
+        # Check mentions
+        mentions = [self.coin_handle.lower(), "shillbot"]
+        for mention in mentions:
+            if f"@{mention}" in text_lower or mention in handle_lower:
+                return True
+        
+        # Check if retweet (retweets are included)
+        if parsed.get("is_retweet", False):
+            return True
+        
+        return False
+
     def collect_shill_tweets(
         self, since_utc: str, until_utc: str
     ) -> List[Tweet]:
         """
-        Collect shill tweets by searching for:
-        - @shootercoinsol mentions
-        - $SHOOTER ticker mentions
-        - Token mint address (if configured)
+        Collect shill tweets using broad keyword search, then filter precisely in Python.
         
-        Merges and deduplicates results, filters by time window.
+        Uses simple keyword search to avoid 400 errors, then filters for:
+        - $SHOOTER, $SHILLBOT, $SHILL cashtags
+        - @shootercoinsol mentions
+        - Token mint address (if configured)
+        - Retweets (included)
         """
         if not self.client.bearer_token:
             return []
@@ -91,12 +131,9 @@ class XIngestor:
         all_tweets: List[dict] = []
         seen_ids: set[str] = set()
 
-        # Build combined query: mentions OR ticker OR token_mint (exclude retweets)
-        query_parts = [f"@{self.coin_handle}", f"${self.coin_ticker}"]
-        if self.token_mint:
-            query_parts.append(self.token_mint)
-        
-        query = " OR ".join(query_parts) + " -is:retweet"
+        # Simple keyword query to avoid 400 errors
+        # Do NOT use complex OR chains, do NOT exclude retweets
+        query = f"{self.coin_ticker} shillbot @{self.coin_handle}"
 
         try:
             # X API expects ISO 8601 format (YYYY-MM-DDTHH:mm:ssZ)
@@ -123,12 +160,14 @@ class XIngestor:
                 max_results=100,
             )
 
-            # Parse and deduplicate
+            # Parse, filter, and deduplicate
             for raw in raw_tweets:
                 parsed = self.client.parse_tweet(raw)
                 if parsed and parsed["tweet_id"] not in seen_ids:
-                    all_tweets.append(parsed)
-                    seen_ids.add(parsed["tweet_id"])
+                    # Filter in Python after API pull
+                    if self._is_shill_tweet(parsed):
+                        all_tweets.append(parsed)
+                        seen_ids.add(parsed["tweet_id"])
 
         except Exception as e:
             print(f"WARNING: Failed to search shill tweets: {e}")
@@ -161,6 +200,9 @@ class XIngestor:
                         view_count=parsed["view_count"],
                         has_media=parsed["has_media"],
                         media_type=parsed["media_type"],
+                        is_retweet=parsed.get("is_retweet", False),
+                        is_quote=parsed.get("is_quote", False),
+                        has_original_text=parsed.get("has_original_text", False),
                     )
                     tweets.append(tweet)
             except (KeyError, ValueError) as e:

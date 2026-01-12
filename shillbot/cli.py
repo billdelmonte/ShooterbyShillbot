@@ -271,6 +271,10 @@ def cmd_export_interim(csv_only: bool = True) -> None:
                     view_count=int(r["view_count"]),
                     has_media=bool(r["has_media"]),
                     media_type=r["media_type"],
+                    # New fields default to False for backward compatibility with DB
+                    is_retweet=r.get("is_retweet", False) if "is_retweet" in r else False,
+                    is_quote=r.get("is_quote", False) if "is_quote" in r else False,
+                    has_original_text=r.get("has_original_text", False) if "has_original_text" in r else False,
                 )
             )
 
@@ -424,6 +428,10 @@ def cmd_close_once(force: bool = False) -> None:
                     view_count=int(r["view_count"]),
                     has_media=bool(r["has_media"]),
                     media_type=r["media_type"],
+                    # New fields default to False for backward compatibility with DB
+                    is_retweet=r.get("is_retweet", False) if "is_retweet" in r else False,
+                    is_quote=r.get("is_quote", False) if "is_quote" in r else False,
+                    has_original_text=r.get("has_original_text", False) if "has_original_text" in r else False,
                 )
             )
 
