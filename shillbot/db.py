@@ -26,7 +26,9 @@ CREATE TABLE IF NOT EXISTS shills (
   reply_count INTEGER NOT NULL,
   view_count INTEGER NOT NULL,
   has_media INTEGER NOT NULL,
-  media_type TEXT NOT NULL
+  media_type TEXT NOT NULL,
+  is_registered INTEGER DEFAULT 0,
+  score REAL
 );
 
 CREATE TABLE IF NOT EXISTS windows (
@@ -87,7 +89,37 @@ CREATE TABLE IF NOT EXISTS interim_shills (
   view_count INTEGER NOT NULL,
   has_media INTEGER NOT NULL,
   media_type TEXT NOT NULL,
-  pulled_at_utc TEXT NOT NULL
+  pulled_at_utc TEXT NOT NULL,
+  UNIQUE(tweet_id)
+);
+
+CREATE TABLE IF NOT EXISTS interim_scores (
+  tweet_id TEXT PRIMARY KEY,
+  handle TEXT NOT NULL,
+  score REAL NOT NULL,
+  rank INTEGER NOT NULL,
+  scored_at_utc TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS payout_plan (
+  window_id TEXT,
+  rank INTEGER,
+  handle TEXT,
+  wallet TEXT,
+  score REAL,
+  percentage REAL,
+  amount_lamports INTEGER,
+  created_at_utc TEXT,
+  PRIMARY KEY (window_id, rank)
+);
+
+CREATE TABLE IF NOT EXISTS payout_transactions (
+  window_id TEXT,
+  wallet TEXT,
+  amount_lamports INTEGER,
+  tx_signature TEXT,
+  sent_at_utc TEXT,
+  PRIMARY KEY (window_id, wallet)
 );
 """
  
@@ -140,6 +172,65 @@ def init_db(db: DB) -> None:
             """)
         except sqlite3.OperationalError:
             pass  # Table already exists
+        # Migration: create interim_scores table if it doesn't exist
+        try:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS interim_scores (
+                  tweet_id TEXT PRIMARY KEY,
+                  handle TEXT NOT NULL,
+                  score REAL NOT NULL,
+                  rank INTEGER NOT NULL,
+                  scored_at_utc TEXT NOT NULL
+                )
+            """)
+        except sqlite3.OperationalError:
+            pass  # Table already exists
+        # Migration: add UNIQUE constraint to interim_shills.tweet_id if not exists
+        try:
+            conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_interim_shills_tweet_id ON interim_shills(tweet_id)")
+        except sqlite3.OperationalError:
+            pass  # Index already exists
+        # Migration: add is_registered column to shills table if it doesn't exist
+        try:
+            conn.execute("ALTER TABLE shills ADD COLUMN is_registered INTEGER DEFAULT 0")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+        # Migration: add score column to shills table if it doesn't exist
+        try:
+            conn.execute("ALTER TABLE shills ADD COLUMN score REAL")
+        except sqlite3.OperationalError:
+            pass  # Column already exists
+        # Migration: create payout_plan table if it doesn't exist
+        try:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS payout_plan (
+                  window_id TEXT,
+                  rank INTEGER,
+                  handle TEXT,
+                  wallet TEXT,
+                  score REAL,
+                  percentage REAL,
+                  amount_lamports INTEGER,
+                  created_at_utc TEXT,
+                  PRIMARY KEY (window_id, rank)
+                )
+            """)
+        except sqlite3.OperationalError:
+            pass  # Table already exists
+        # Migration: create payout_transactions table if it doesn't exist
+        try:
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS payout_transactions (
+                  window_id TEXT,
+                  wallet TEXT,
+                  amount_lamports INTEGER,
+                  tx_signature TEXT,
+                  sent_at_utc TEXT,
+                  PRIMARY KEY (window_id, wallet)
+                )
+            """)
+        except sqlite3.OperationalError:
+            pass  # Table already exists
 
 
 def get_last_snapshot_lamports(conn: sqlite3.Connection) -> Optional[int]:
@@ -163,3 +254,16 @@ def get_last_window_end_balance(conn: sqlite3.Connection) -> Optional[int]:
         "SELECT end_balance_lamports FROM windows WHERE closed_at_utc IS NOT NULL AND end_balance_lamports IS NOT NULL ORDER BY closed_at_utc DESC LIMIT 1"
     ).fetchone()
     return int(row["end_balance_lamports"]) if row and row["end_balance_lamports"] is not None else None
+
+
+def backfill_registration_status(conn: sqlite3.Connection) -> None:
+    """
+    Update is_registered column in shills table based on current registrations.
+    Runs whenever registrations are ingested or shills are scored.
+    Retroactively marks all past tweets when users register.
+    """
+    conn.execute("""
+        UPDATE shills
+        SET is_registered = 1
+        WHERE handle IN (SELECT handle FROM registrations)
+    """)

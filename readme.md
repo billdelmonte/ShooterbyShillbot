@@ -41,30 +41,54 @@ powershell -ExecutionPolicy Bypass -File .\bootstrap.ps1 -Close -Serve
 - ✅ **Token holding verification**: Filters out winners who don't hold minimum token amount at window close
 - ✅ **Blacklist/Exclusion**: Filter out blacklisted handles and excluded tweets before scoring
 
-## Commands
+## Local Execution
+
+This project is designed for **deterministic, on-demand local execution**. All commands run manually when needed - no background services or continuous uptime required.
+
+### Basic Workflow
+
+```bash
+# 1. Initialize database (first time only)
+python -m shillbot init-db
+
+# 2. Pull registrations (run when needed)
+python -m shillbot ingest-registrations
+
+# 3. Close window (run at window close times: 2pm/11pm CT)
+# Automatically pulls official shills, scores, and distributes payouts
+python -m shillbot close-once
+
+# 4. View reports (optional - serve locally when needed)
+python -m shillbot serve
+# Then open http://localhost:8000 in your browser
+```
+
+### All Commands
 
 ```bash
 # Initialize database
 python -m shillbot init-db
 
-# Pull registrations (hourly job)
+# Pull registrations (run periodically)
 python -m shillbot ingest-registrations
 
-# Official pull at window close (automatic)
+# Official pull at window close (automatic during close-once)
 python -m shillbot ingest --official --window-id 20260110-1400
 
-# Interim/preview pull (manual)
+# Interim/preview pull (manual testing)
 python -m shillbot ingest --interim --since 2026-01-10T00:00:00Z --until 2026-01-10T14:00:00Z
 
 # Export interim scoring to CSV
 python -m shillbot export-interim
 
-# Close window (automatically pulls official shills)
+# Close window (automatically pulls official shills, scores, pays out)
 python -m shillbot close-once
 
-# Serve public reports
+# Serve public reports (optional - run manually when needed)
 python -m shillbot serve
 ```
+
+All commands are manual and on-demand. No background jobs or automatic scheduling required.
 
 ## Configuration
 
@@ -84,11 +108,13 @@ SHILLBOT_TREASURY_KEYPAIR_PATH=...          # Path to treasury keypair file (for
 SHILLBOT_DRY_RUN=true                       # true = DRY_RUN mode, false = real transfers
 ```
 
-## VPS Deployment
+## Optional: VPS Deployment
 
-For production deployment on a Linux VPS, see [deploy/README.md](deploy/README.md) for detailed instructions.
+For continuous, automated execution on a Linux VPS, see [deploy/README.md](deploy/README.md) for detailed instructions.
 
-Quick setup:
+**Note:** VPS deployment is optional. The project is designed for local execution by default. VPS deployment uses systemd services and timers for automated scheduling.
+
+Quick VPS setup:
 ```bash
 # Run deployment script (automates setup)
 ./deploy/deploy.sh
@@ -96,7 +122,7 @@ Quick setup:
 # Or manually follow steps in deploy/README.md
 ```
 
-The deployment includes:
+VPS deployment includes:
 - Systemd service for web server (serves `public/` directory)
 - Systemd timer for hourly registration ingest
 - Systemd timers for window close jobs (2:00 PM and 11:00 PM CT)
@@ -106,6 +132,6 @@ The deployment includes:
 1. ✅ **Real ingest** - Complete (v2 spec)
 2. ✅ **Real treasury balance** - Complete
 3. ✅ **Real payouts** - Complete (configurable: DRY_RUN or real transfers)
-4. ✅ **VPS deploy** - Complete (systemd services and timers)
+4. ✅ **Local execution** - Complete (deterministic, on-demand execution)
 
 See `spec.md` for full specification.

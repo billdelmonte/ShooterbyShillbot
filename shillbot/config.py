@@ -45,6 +45,25 @@ def _parse_bins(s: str) -> List[Tuple[int, int, float]]:
     return out
 
 
+# Solana RPC URL (mainnet)
+SOLANA_RPC_URL = "https://api.mainnet-beta.solana.com"
+
+# Dry run mode (False = execute real transactions)
+DRY_RUN = False
+
+
+def validate_rpc_url(rpc_url: str) -> None:
+    """Hard fail if devnet is detected in RPC URL."""
+    if "devnet" in rpc_url.lower():
+        raise RuntimeError("FATAL: Devnet RPC configured. Refusing to run.")
+
+# Insider handles excluded from payouts (still ingested, scored, exported)
+INSIDER_HANDLES = {
+    "shootercoinsol",
+    "billdelmonte",
+}
+
+
 @dataclass(frozen=True)
 class Settings:
     timezone: str
@@ -104,9 +123,14 @@ def load_settings() -> Settings:
     top_n = _getenv_int("SHILLBOT_TOP_N", "20")
     payout_bins = _parse_bins(_getenv("SHILLBOT_PAYOUT_BINS", "2-5:0.25,6-10:0.15,11-20:0.10"))
 
-    rpc_url = _getenv("SHILLBOT_RPC_URL", "https://api.devnet.solana.com")
+    # Use mainnet RPC URL (with validation to prevent devnet)
+    rpc_url = _getenv("SHILLBOT_RPC_URL", SOLANA_RPC_URL)
+    
+    # Hard fail if devnet is detected
+    validate_rpc_url(rpc_url)
     treasury_pubkey = _getenv("SHILLBOT_TREASURY_PUBKEY", "").strip()
-    treasury_keypair_path = _getenv("SHILLBOT_TREASURY_KEYPAIR_PATH", "").strip()
+    treasury_keypair_path = "reward_wallet.json"
+    print(f"using treasury keypair: {treasury_keypair_path}")
     marketing_wallet = _getenv("SHILLBOT_MARKETING_WALLET", "").strip()
     dev_wallet = _getenv("SHILLBOT_DEV_WALLET", "").strip()
     sweep_ops = _getenv_bool("SHILLBOT_SWEEP_OPS", "false")
@@ -114,12 +138,13 @@ def load_settings() -> Settings:
     token_mint = _getenv("SHILLBOT_TOKEN_MINT", "").strip()
     min_token_amount = _getenv_int("SHILLBOT_MIN_TOKEN_AMOUNT", "0")
 
-    dry_run = _getenv_bool("SHILLBOT_DRY_RUN", "true")
+    # Default to False (execute real transactions), but allow env var override
+    dry_run = _getenv_bool("SHILLBOT_DRY_RUN", "false")
     max_payouts_per_close = _getenv_int("SHILLBOT_MAX_PAYOUTS_PER_CLOSE", "25")
 
     coin_handle = _getenv("SHILLBOT_COIN_HANDLE", "shootercoinsol").lstrip("@")
     coin_ticker = _getenv("SHILLBOT_COIN_TICKER", "SHOOTER").lstrip("$")
-    register_hashtag = _getenv("SHILLBOT_REGISTER_HASHTAG", "Shillbot-register").lstrip("#")
+    register_hashtag = _getenv("SHILLBOT_REGISTER_HASHTAG", "shillbotregister").lstrip("#")
 
     if abs((pot_share + marketing_share + dev_share) - 1.0) > 1e-9:
         raise ValueError("POT + MARKETING + DEV shares must sum to 1.0")

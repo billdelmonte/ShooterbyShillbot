@@ -13,3 +13,11 @@ shillbot.sqlite3
 # OS junk
 .DS_Store
 Thumbs.db
+
+# Solana wallets / keys
+*.json
+reward_wallet.json
+treasury_wallet.json
+
+# Generated exports
+public/exports/

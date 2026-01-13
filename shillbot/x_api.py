@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import time
 from dataclasses import dataclass
@@ -28,6 +29,25 @@ class XAPIClient:
                 time.sleep(retry_after)
                 # Retry once
                 resp = requests.get(url, headers=headers, params=params, timeout=self.timeout_s)
+            
+            # Step 4: Log RAW X API error body before raising
+            if resp.status_code >= 400:
+                print("=" * 80)
+                print("X API ERROR - RAW RESPONSE:")
+                print("=" * 80)
+                print(f"HTTP Status: {resp.status_code}")
+                print(f"URL: {resp.url}")
+                print(f"Request Params: {params}")
+                print(f"Response Headers: {dict(resp.headers)}")
+                print(f"Response Text (first 2000 chars):")
+                print(resp.text[:2000])
+                try:
+                    error_json = resp.json()
+                    print(f"Response JSON:")
+                    print(json.dumps(error_json, indent=2))
+                except (ValueError, json.JSONDecodeError):
+                    print("(Response is not valid JSON)")
+                print("=" * 80)
             
             resp.raise_for_status()
             

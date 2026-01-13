@@ -42,10 +42,10 @@ Dashboard metrics: current winners, pot size, total rewards to date, payout reco
 
 ## Tech (v0 → v1)
 
-**Runtime:** Python on a small VPS (cron/systemd). State: SQLite.
+**Runtime:** Python (local execution or optional VPS). State: SQLite.
 
 **Ingest:** Official X API (Twitter API v2) for X data:
-  - Registrations: Search `#Shillbot-register` hashtag (hourly)
+  - Registrations: Search `#Shillbot-register` hashtag (on-demand)
   - Shills: Search `@shootercoinsol`, `$SHOOTER`, token mint (2x/day at window close)
   - Rate limiting: 1 shill per minute per user
   - API rate limits: 180-450 requests per 15 min (tier dependent)

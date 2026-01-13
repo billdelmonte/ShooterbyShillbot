@@ -1,6 +1,10 @@
 # Shooter ShillBot bootstrap (Windows / PowerShell)
+# 
+# This script is for LOCAL EXECUTION - no VPS or systemd required.
 # Run from project root:
 #   powershell -ExecutionPolicy Bypass -File .\bootstrap.ps1 -Close -Serve
+#
+# For VPS deployment (optional), see deploy/README.md
 
 param(
   [switch]$Close,

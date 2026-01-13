@@ -51,6 +51,49 @@ class SolanaCLIPayer:
         return ("SENT", sig)
 
 
+# Hard-coded payout percentages for ranks 1-10 (IMMUTABLE)
+PAYOUT_PERCENTAGES = [0.30, 0.15, 0.10, 0.10, 0.10, 0.05, 0.05, 0.05, 0.05, 0.05]
+TOP_N_PAYOUTS = 10
+
+
+def compute_payout_plan(
+    window_id: str,
+    pot_lamports: int,
+    ranked_winners: List[Tuple[str, str, float]],  # (handle, wallet, score)
+    min_payout_lamports: int,
+) -> List[Tuple[str, int, str, str, float, float, int]]:
+    """
+    Compute payout plan using fixed top-10 percentages.
+    Returns list of (window_id, rank, handle, wallet, score, percentage, amount_lamports).
+    Does NOT write to database - caller handles persistence.
+    Pure function with no side effects.
+    """
+    plan: List[Tuple[str, int, str, str, float, float, int]] = []
+    
+    if pot_lamports <= 0:
+        return plan
+    
+    # Take only top 10
+    ranked = ranked_winners[:TOP_N_PAYOUTS]
+    if not ranked:
+        return plan
+    
+    # Apply fixed percentages for each rank
+    for rank_idx, (handle, wallet, score) in enumerate(ranked, start=1):
+        if rank_idx > TOP_N_PAYOUTS:
+            break
+        
+        percentage = PAYOUT_PERCENTAGES[rank_idx - 1]
+        amount_lamports = int(pot_lamports * percentage)
+        
+        # Only include if meets minimum payout threshold
+        if amount_lamports >= min_payout_lamports:
+            plan.append((window_id, rank_idx, handle, wallet, score, percentage, amount_lamports))
+    
+    return plan
+
+
+# Keep old function for backward compatibility (deprecated)
 def allocate_payouts(
     pot_lamports: int,
     winners: List[Tuple[str, str, float]],
@@ -58,6 +101,7 @@ def allocate_payouts(
     min_payout_lamports: int,
     payout_bins: List[Tuple[int, int, float]],
 ) -> List[Payout]:
+    """Deprecated: Use compute_payout_plan instead. Kept for backward compatibility."""
     payouts: List[Payout] = []
     if pot_lamports <= 0:
         return payouts

@@ -1,6 +1,10 @@
-# VPS Deployment Guide
+# VPS Deployment Guide (Optional)
 
-This guide walks you through deploying Shooter ShillBot on a Linux VPS using systemd services and timers.
+**IMPORTANT:** This guide is for **optional VPS deployment** only. 
+
+**The project is designed for manual, on-demand local execution by default.** All commands can be run manually - no VPS, systemd, or automated scheduling required.
+
+This guide walks you through deploying Shooter ShillBot on a Linux VPS using systemd services and timers for continuous, automated execution (if you want automation). For local execution instructions, see the main [README.md](../readme.md) and [LOCAL_EXECUTION.md](../LOCAL_EXECUTION.md).
 
 ## Prerequisites
 
@@ -185,22 +189,27 @@ systemctl --user stop shillbot-ingest-hourly.timer
 systemctl --user disable shillbot-ingest-hourly.timer
 ```
 
-## Scheduled Jobs
+## Scheduled Jobs (Optional)
 
-### Hourly Registration Ingest
-- **Timer**: `shillbot-ingest-hourly.timer`
-- **Runs**: Every hour (with 5-minute randomized delay)
+**Note:** All commands can be run manually. Systemd timers are optional for automation.
+
+### Registration Ingest (Optional Timer)
+- **Timer**: `shillbot-ingest-hourly.timer` (optional)
+- **Runs**: Every hour (with 5-minute randomized delay) if enabled
 - **Command**: `python -m shillbot ingest-registrations`
+- **Manual alternative**: Run `python -m shillbot ingest-registrations` when needed
 
-### Window Close at 2:00 PM CT
-- **Timer**: `shillbot-close-2pm.timer`
-- **Runs**: Daily at 2:00 PM Central Time
+### Window Close at 2:00 PM CT (Optional Timer)
+- **Timer**: `shillbot-close-2pm.timer` (optional)
+- **Runs**: Daily at 2:00 PM Central Time if enabled
 - **Command**: `python -m shillbot close-once`
+- **Manual alternative**: Run `python -m shillbot close-once` at 2pm CT
 
-### Window Close at 11:00 PM CT
-- **Timer**: `shillbot-close-11pm.timer`
-- **Runs**: Daily at 11:00 PM Central Time
+### Window Close at 11:00 PM CT (Optional Timer)
+- **Timer**: `shillbot-close-11pm.timer` (optional)
+- **Runs**: Daily at 11:00 PM Central Time if enabled
 - **Command**: `python -m shillbot close-once`
+- **Manual alternative**: Run `python -m shillbot close-once` at 11pm CT
 
 ## Web Server
 

@@ -1,5 +1,45 @@
 # Deployment Checklist
 
+## Local Execution (Primary)
+
+This project is designed for **local execution** by default. See [LOCAL_EXECUTION.md](LOCAL_EXECUTION.md) for the complete local execution guide.
+
+### Quick Start
+
+1. **Setup:**
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # or .venv\Scripts\activate on Windows
+   pip install -r requirements.txt
+   cp .env.example .env
+   # Edit .env with your configuration
+   python -m shillbot init-db
+   ```
+
+2. **Daily Workflow:**
+   ```bash
+   # Pull registrations (run when needed)
+   python -m shillbot ingest-registrations
+   
+   # Close window (run at window close times: 2pm/11pm CT)
+   python -m shillbot close-once
+   
+   # View reports (optional, run when needed)
+   python -m shillbot serve
+   ```
+
+All commands are manual and on-demand. No automatic scheduling required.
+
+See [LOCAL_EXECUTION.md](LOCAL_EXECUTION.md) for detailed local execution instructions.
+
+---
+
+## Optional: VPS Deployment
+
+VPS deployment is **optional** and only needed if you want continuous, automated execution on a remote server. For local execution, see the section above.
+
+---
+
 ## Environment Variables (.env file)
 
 ### Required for Production
@@ -139,7 +179,9 @@ cat public/latest.json
 - Verify marketing/dev wallet received payouts
 - Verify winner wallets received payouts
 
-## Production Deployment
+## Optional: VPS Production Deployment
+
+**Note:** This section is for optional VPS deployment. For local execution, see the "Local Execution" section above.
 
 ### 1. Final Checklist
 
@@ -233,17 +275,18 @@ systemctl --user list-timers
 - [ ] Reports generated correctly
 - [ ] Transactions visible on explorer
 - [ ] Database schema correct
-- [ ] Systemd services running
+- [ ] All commands tested manually
 
-### After Production Deployment
+### After VPS Production Deployment (Optional)
 
-- [ ] Web server accessible (port 8000)
-- [ ] Hourly ingest job running
-- [ ] Window close jobs scheduled correctly
+- [ ] Web server accessible (port 8000) if using systemd service
+- [ ] Systemd timers enabled (optional - all commands can be run manually)
 - [ ] Logs showing no errors
 - [ ] First window close successful
 - [ ] Payouts sent successfully
 - [ ] Reports accessible via web server
+
+**Note:** For local execution, these checks are not applicable. See [LOCAL_EXECUTION.md](LOCAL_EXECUTION.md) for local execution verification steps.
 
 ## Troubleshooting
 
@@ -265,11 +308,17 @@ systemctl --user list-timers
    - Check wallet addresses are valid Solana addresses
    - Check logs for error messages
 
-4. **Services not starting:**
+4. **Services not starting (VPS only):**
    - Check paths in systemd service files
    - Check .env file exists and is readable
    - Check Python virtual environment is correct
    - Check logs: `journalctl --user -u shillbot-serve.service`
+
+5. **Local execution issues:**
+   - See [LOCAL_EXECUTION.md](LOCAL_EXECUTION.md) troubleshooting section
+   - Verify virtual environment is activated
+   - Check .env file configuration
+   - Ensure database is initialized: `python -m shillbot init-db`
 
 ## Notes
 
